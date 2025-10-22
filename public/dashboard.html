@@ -6,8 +6,8 @@
     <title>AQI Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link rel="stylesheet" href="css/styles.css">
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -16,242 +16,529 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f8f8;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
         }
 
         .header {
-            background: #000;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
             color: white;
-            padding: 15px 20px;
+            padding: 20px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
 
         .header h1 {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .header .close-icon, .header .menu-icon {
-            font-size: 24px;
+        .header-icons {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            font-size: 20px;
             cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .icon-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.1);
         }
 
         .main-layout {
             display: flex;
-            height: calc(100vh - 120px);
+            min-height: calc(100vh - 80px);
+            position: relative;
         }
 
         .sidebar {
-            width: 220px;
-            background: #1a2b3c;
-            padding: 20px 0;
+            width: 280px;
+            background: rgba(26, 43, 60, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px 0;
+            position: fixed;
+            left: 0;
+            top: 80px;
+            height: calc(100vh - 80px);
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 999;
+            box-shadow: 4px 0 30px rgba(0,0,0,0.3);
+            overflow-y: auto;
+        }
+
+        .sidebar.visible {
+            transform: translateX(0);
         }
 
         .sidebar-item {
-            padding: 12px 20px;
-            color: white;
+            padding: 16px 30px;
+            color: rgba(255,255,255,0.8);
             cursor: pointer;
-            border-bottom: 1px solid #333;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 15px;
+            position: relative;
+            margin: 4px 15px;
+            border-radius: 12px;
         }
 
-        .sidebar-item:hover, .sidebar-item.active {
-            background: #2c3e50;
+        .sidebar-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 0;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 0 4px 4px 0;
+            transition: height 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .sidebar-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-item.active::before {
+            height: 60%;
         }
 
         .main-content {
             flex: 1;
-            padding: 20px;
-            overflow-y: auto;
+            padding: 30px;
+            margin-left: 0;
+            transition: margin-left 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            position: relative;
+        }
+
+        .main-content.sidebar-open {
+            margin-left: 280px;
+        }
+
+        .floating-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            animation: floatIn 0.6s ease-out;
+            transition: all 0.4s ease;
+        }
+
+        .floating-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+        }
+
+        @keyframes floatIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .user-info {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
             color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 35px;
+            border-radius: 24px;
+            margin-bottom: 30px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
+        }
+
+        .user-info::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 15s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         .user-info h2 {
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 32px;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
         }
 
-        .header-card {
-            background: linear-gradient(135deg, #f0fff0, #d0f0e0);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
+        .user-info p {
+            position: relative;
+            z-index: 1;
+            opacity: 0.9;
         }
 
         .aqi-row {
-            display: flex;
-            justify-content: space-around;
-            gap: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
         }
 
         .aqi-box {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #ffffff, #f8f9fa);
+            padding: 25px;
+            border-radius: 20px;
             text-align: center;
-            flex: 1;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .aqi-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .aqi-box:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
         }
 
         .aqi-value {
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 36px;
+            font-weight: 800;
             color: #333;
+            margin-bottom: 8px;
+            animation: countUp 1s ease-out;
+        }
+
+        @keyframes countUp {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .aqi-label {
-            font-size: 12px;
+            font-size: 13px;
             color: #666;
-            margin-top: 5px;
-        }
-
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 0 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .section-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .tabs {
             display: flex;
-            gap: 5px;
-            margin-bottom: 20px;
+            gap: 12px;
+            margin-bottom: 25px;
+            background: rgba(0,0,0,0.05);
+            padding: 8px;
+            border-radius: 16px;
         }
 
         .tab {
             flex: 1;
-            padding: 10px;
-            background: #eee;
+            padding: 14px 20px;
+            background: transparent;
             border: none;
-            border-radius: 5px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab:hover {
+            background: rgba(255,255,255,0.5);
+            color: #333;
         }
 
         .tab.active {
-            background: #d0f0c0;
-            font-weight: bold;
-        }
-
-        .chart-container {
-            background: white;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .tip-box {
-            background: #ffcdd2;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .tip-text {
-            color: #d32f2f;
-            font-size: 14px;
-        }
-
-        .actions-row {
-            display: flex;
-            justify-content: space-around;
-            gap: 10px;
-        }
-
-        .action-item {
-            text-align: center;
-            flex: 1;
-        }
-
-        .action-icon {
-            font-size: 40px;
-            margin-bottom: 8px;
-        }
-        
-        .action-label {
-            font-size: 12px;
-            color: #555;
-        }
-
-        .setting-item {
-            padding: 15px 0;
-            border-bottom: 1px solid #ddd;
-            font-size: 16px;
-            color: #333;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .setting-item:hover {
-            background: #f5f5f5;
-            padding-left: 10px;
-        }
-
-        .logout-btn {
-            background: #dc3545;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .logout-btn:hover {
-            background: #c82333;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
         .content-section {
             display: none;
+            animation: fadeIn 0.5s ease;
         }
 
         .content-section.active {
             display: block;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 16px;
+            padding: 15px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .info-row:hover {
+            background: rgba(255,255,255,0.5);
+            transform: translateX(5px);
+        }
+
+        #quickTip {
+            background: rgba(255, 243, 205, 0.9);
+            color: #856404;
+            padding: 18px;
+            border-radius: 14px;
+            margin-top: 20px;
+            font-size: 15px;
+            border-left: 4px solid #ffc107;
+            animation: slideIn 0.6s ease;
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e53935;
+            transition: all 0.3s ease;
+        }
+
+        .tip-box:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(229, 57, 53, 0.2);
+        }
+
+        .tip-text {
+            color: #c62828;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .actions-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 20px;
+        }
+
+        .action-item {
+            background: linear-gradient(135deg, #f5f7fa, #ffffff);
+            padding: 30px 20px;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+        }
+
+        .action-item:hover {
+            transform: translateY(-8px);
+            border-color: #667eea;
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .action-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .action-item:hover .action-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+        
+        .action-label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .setting-item {
+            padding: 20px;
+            margin: 8px 0;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0,0,0,0.02);
+        }
+
+        .setting-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(10px);
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 80px);
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .main-content.sidebar-open {
+                margin-left: 0;
+            }
+
+            .sidebar.visible {
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            }
+
+            .aqi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 769px) {
+            .sidebar-overlay {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <span class="close-icon" onclick="logout()">✕</span>
-        <h1>AQI Dashboard</h1>
-        <span class="menu-icon">⋯</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span class="icon-btn" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </span>
+            <h1>
+                <i class="fas fa-wind"></i>
+                AQI Dashboard
+            </h1>
+        </div>
+        <div class="header-icons">
+            <span class="icon-btn" title="Notifications">
+                <i class="fas fa-bell"></i>
+            </span>
+            <span class="icon-btn" onclick="logout()" title="Logout">
+                <i class="fas fa-sign-out-alt"></i>
+            </span>
+        </div>
     </div>
 
     <div class="main-layout">
-        <div class="sidebar">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-item active" onclick="showSection('home')">
                 <i class="fas fa-home"></i> Home
             </div>
@@ -262,32 +549,33 @@
                 <i class="fas fa-map-marked-alt"></i> Heatmap
             </div>
             <div class="sidebar-item" onclick="showSection('health')">
-                <i class="fas fa-heartbeat"></i> Health Tips Card
+                <i class="fas fa-heartbeat"></i> Health Tips
             </div>
             <div class="sidebar-item" onclick="showSection('actions')">
-                <i class="fas fa-exclamation-triangle"></i> Action Buttons
+                <i class="fas fa-exclamation-triangle"></i> Quick Actions
             </div>
             <div class="sidebar-item" onclick="showSection('settings')">
                 <i class="fas fa-cog"></i> Settings
             </div>
         </div>
 
-        <div class="main-content">
-            <div class="user-info">
-                <h2>Welcome, <span id="userName"></span>!</h2>
-                <p>Check your air quality dashboard</p>
-                <p id="lastLoginInfo" style="font-size:14px;"></p>
-                <div id="quickTip" style="background:#fff3cd;color:#856404;padding:10px;border-radius:8px;margin-top:10px;font-size:15px;"></div>
+        <div class="main-content" id="mainContent">
+            <div class="user-info floating-card">
+                <h2>Welcome, <span id="userName">User</span>! 👋</h2>
+                <p style="font-size: 16px; margin-top: 8px;">Monitor your air quality in real-time</p>
+                <p id="lastLoginInfo" style="font-size:14px; margin-top: 8px; opacity: 0.8;"></p>
+                <div id="quickTip"></div>
             </div>
 
-            <div class="header-card">
-                <div class="section-header" style="margin-top: 0;">
-                    <h2 class="section-title">Current AQI + Pollutants</h2>
-                </div>
+            <div class="floating-card">
+                <h2 class="section-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Current AQI & Pollutants
+                </h2>
                 <div class="aqi-row">
                     <div class="aqi-box">
                         <div class="aqi-value" id="aqiValue">--</div>
-                        <div class="aqi-label">AQI</div>
+                        <div class="aqi-label">AQI Index</div>
                     </div>
                     <div class="aqi-box">
                         <div class="aqi-value" id="pm25Value">--</div>
@@ -299,118 +587,287 @@
                     </div>
                     <div class="aqi-box">
                         <div class="aqi-value" id="coValue">--</div>
-                        <div class="aqi-label">CO /h</div>
+                        <div class="aqi-label">CO AQI</div>
+                    </div>
+                    <div class="aqi-box">
+                        <div class="aqi-value" id="no2Value">--</div>
+                        <div class="aqi-label">NO2 AQI</div>
+                    </div>
+                    <div class="aqi-box">
+                        <div class="aqi-value" id="so2Value">--</div>
+                        <div class="aqi-label">SO2 AQI</div>
                     </div>
                 </div>
             </div>
 
             <!-- Home Section -->
             <div id="home" class="content-section active">
-                <div class="section-header">
-                    <h2 class="section-title">Home</h2>
-                </div>
-                <div class="card" style="background: #e3f2fd;">
-                    <h3 class="card-title">Current Status</h3>
-                    <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px;">
+                <div class="floating-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Current Status
+                    </h3>
+                    <div class="info-row">
                         <span><i class="fas fa-calendar-alt"></i> <strong>Date:</strong></span>
                         <span id="currentDate"></span>
                     </div>
-                    <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px;">
+                    <div class="info-row">
                         <span><i class="fas fa-clock"></i> <strong>Time:</strong></span>
                         <span id="currentTime"></span>
                     </div>
-                    <div class="info-row" style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px;">
+                    <div class="info-row">
                         <span><i class="fas fa-map-marker-alt"></i> <strong>Location:</strong></span>
                         <span id="userLocation">Fetching...</span>
                     </div>
-                    <div class="info-row" style="display: flex; justify-content: space-between; font-size: 16px;">
+                    <div class="info-row">
                         <span><i class="fas fa-wind"></i> <strong>Current AQI:</strong></span>
                         <span id="locationAqi">Fetching...</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Trends & Forecast Section -->
+            <!-- Trends Section -->
             <div id="trends" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Trends Graph (Daily/Weekly/Forecast)</h2>
-                </div>
-
-                <div class="tabs">
-                    <button class="tab active">Daily</button>
-                    <button class="tab">Weekly</button>
-                    <button class="tab">Forecast</button>
-                </div>
-
-                <div class="chart-container">
-                    <i class="fas fa-chart-area" style="font-size: 60px; color: #ccc;"></i>
-                    <p style="margin-top: 10px; color: #888;">📈 Graph Placeholder</p>
-                    <p style="color: #999; font-size: 12px;">Use Chart.js or similar library for visualization</p>
+                <div class="floating-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Trends & Forecast
+                    </h2>
+                    <div class="tabs">
+                        <button class="tab active" onclick="switchTab(this, 'daily')">Daily</button>
+                        <button class="tab" onclick="switchTab(this, 'weekly')">Weekly</button>
+                        <button class="tab" onclick="switchTab(this, 'forecast')">Forecast</button>
+                    </div>
+                    <div style="height: 400px; padding: 20px;">
+                        <canvas id="aqiChart"></canvas>
+                    </div>
+                    
+                    <div style="margin-top: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 32px; font-weight: 800; color: #2e7d32;" id="trendChange">--</div>
+                            <div style="color: #1b5e20; font-size: 14px; margin-top: 8px;">vs Yesterday</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); padding: 20px; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 32px; font-weight: 800; color: #e65100;" id="peakAqi">--</div>
+                            <div style="color: #bf360c; font-size: 14px; margin-top: 8px;">Today's Peak</div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 16px; text-align: center;">
+                            <div style="font-size: 32px; font-weight: 800; color: #1565c0;" id="avgAqi">--</div>
+                            <div style="color: #0d47a1; font-size: 14px; margin-top: 8px;">Weekly Average</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <!-- Heatmap Section -->
             <div id="heatmap" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Heatmap</h2>
-                </div>
-                <div class="chart-container" id="map" style="height: 400px;">
+                <div class="floating-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-map-marked-alt"></i>
+                        AQI Heatmap
+                    </h2>
+                    <div id="map" style="height: 500px; border-radius: 16px; overflow: hidden;"></div>
                 </div>
             </div>
 
             <!-- Health Tips Section -->
             <div id="health" class="content-section">
-                <div class="section-header">
-                    <h2 class="section-title">Health Tips Card</h2>
-                </div>
-                <div class="card" style="background: #ffebee;">
-                    <h3 class="card-title">Dynamic Health Recommendations</h3>
-                    <div class="tip-box">
-                        <p class="tip-text"><strong>Current AQI: 142 (Unhealthy for Sensitive Groups)</strong>. It's recommended to reduce prolonged or heavy exertion outdoors.</p>
+                <div class="floating-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-heartbeat"></i>
+                        Health Recommendations
+                    </h3>
+                    
+                    <div style="background: linear-gradient(135deg, #f3e5f5, #e1bee7); padding: 25px; border-radius: 16px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="font-size: 20px; color: #4a148c;">Current AQI: <span id="healthAqi">--</span></h4>
+                            <span id="aqiCategory" style="padding: 8px 16px; background: white; border-radius: 20px; font-weight: 600; font-size: 14px;">Loading...</span>
+                        </div>
+                        <div id="mainHealthAdvice" style="color: #6a1b9a; font-size: 16px; line-height: 1.6;"></div>
                     </div>
-                     <div class="tip-box" style="background: #e3f2fd;">
-                        <p class="tip-text" style="color: #1976d2;">Sensitive individuals, and children, should avoid outdoor activity.</p>
+
+                    <div class="tip-box">
+                        <p class="tip-text"><strong><i class="fas fa-exclamation-circle"></i> General Precautions:</strong></p>
+                        <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8;">
+                            <li>Monitor air quality regularly throughout the day</li>
+                            <li>Reduce prolonged or heavy outdoor exertion</li>
+                            <li>Sensitive groups should avoid outdoor activity</li>
+                            <li>Keep emergency medications readily available</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-box" style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); border-left-color: #1976d2;">
+                        <p class="tip-text" style="color: #1565c0;"><strong><i class="fas fa-shield-alt"></i> Protection Tips:</strong></p>
+                        <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8; color: #1565c0;">
+                            <li>Wear N95 or N99 masks when going outside</li>
+                            <li>Keep indoor air purifiers running continuously</li>
+                            <li>Use HEPA filters in air conditioning systems</li>
+                            <li>Seal windows and doors to prevent outdoor air entry</li>
+                        </ul>
+                    </div>
+
+                    <div class="tip-box" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-left-color: #f57c00;">
+                        <p class="tip-text" style="color: #e65100;"><strong><i class="fas fa-child"></i> For Sensitive Groups:</strong></p>
+                        <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8; color: #e65100;">
+                            <li><strong>Children:</strong> Limit outdoor play time and monitor respiratory symptoms</li>
+                            <li><strong>Elderly:</strong> Stay indoors and keep medications accessible</li>
+                            <li><strong>Asthma/COPD:</strong> Follow your action plan and carry rescue inhaler</li>
+                            <li><strong>Pregnant Women:</strong> Minimize exposure and consult healthcare provider</li>
+                        </ul>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 20px; border-radius: 16px; margin-top: 20px;">
+                        <h4 style="color: #1b5e20; margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-spa"></i> Indoor Air Quality Tips
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="background: white; padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 28px; margin-bottom: 8px;">🚭</div>
+                                <div style="font-weight: 600; color: #2e7d32; margin-bottom: 5px;">No Smoking</div>
+                                <div style="font-size: 13px; color: #558b2f;">Keep indoor air clean</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Action Buttons Section -->
+            <!-- Actions Section -->
             <div id="actions" class="content-section">
-                 <div class="section-header">
-                    <h2 class="section-title">Action Buttons</h2>
-                </div>
-                <div class="card" style="background: #e8f5e9;">
+                <div class="floating-card">
+                    <h2 class="section-title">
+                        <i class="fas fa-bolt"></i>
+                        Quick Actions & Recommendations
+                    </h2>
+                    
+                    <div style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); padding: 20px; border-radius: 16px; margin-bottom: 25px; border-left: 4px solid #f57c00;">
+                        <h4 style="color: #e65100; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-exclamation-triangle"></i> Current Action Plan
+                        </h4>
+                        <p id="actionPlanText" style="color: #bf360c; font-size: 15px; line-height: 1.6;">Based on current AQI levels, follow these recommended actions...</p>
+                    </div>
+
+                    <h3 style="font-size: 20px; font-weight: 700; color: #333; margin-bottom: 15px;">
+                        <i class="fas fa-tasks"></i> Essential Actions
+                    </h3>
                     <div class="actions-row">
-                        <div class="action-item">
+                        <div class="action-item" onclick="actionAlert('Wear a Mask', 'Use N95 or N99 masks for better protection. Change masks every 8 hours or when damp.')">
                             <div class="action-icon">😷</div>
-                            <div class="action-label">Wear a mask</div>
+                            <div class="action-label">Wear a Mask</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">N95/N99</div>
                         </div>
-                        <div class="action-item">
-                            <div class="action-icon">🌪</div>
-                            <div class="action-label">Use air purifier</div>
+                        <div class="action-item" onclick="actionAlert('Air Purifier', 'Run air purifiers with HEPA filters continuously in main living areas. Clean filters monthly.')">
+                            <div class="action-icon">🌪️</div>
+                            <div class="action-label">Air Purifier</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">HEPA Filter</div>
                         </div>
-                        <div class="action-item">
+                        <div class="action-item" onclick="actionAlert('Close Windows', 'Keep all windows and doors closed to prevent outdoor polluted air from entering your home.')">
                             <div class="action-icon">🪟</div>
-                            <div class="action-label">Keep windows closed</div>
+                            <div class="action-label">Close Windows</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">Seal Doors</div>
                         </div>
+                        <div class="action-item" onclick="actionAlert('Indoor Exercise', 'Switch to indoor workouts. Yoga, stretching, or light cardio at home are great alternatives.')">
+                            <div class="action-icon">🏃</div>
+                            <div class="action-label">Indoor Exercise</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">Stay Inside</div>
+                        </div>
+                        <div class="action-item" onclick="actionAlert('Stay Hydrated', 'Drink 8-10 glasses of water daily to help your body flush out toxins and maintain respiratory health.')">
+                            <div class="action-icon">💧</div>
+                            <div class="action-label">Stay Hydrated</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">8-10 Glasses</div>
+                        </div>
+                        <div class="action-item" onclick="actionAlert('Indoor Plants', 'Add air-purifying plants like Spider Plant, Peace Lily, Snake Plant, and Aloe Vera to your home.')">
+                            <div class="action-icon">🌱</div>
+                            <div class="action-label">Indoor Plants</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 5px;">Natural Filter</div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 20px; font-weight: 700; color: #333; margin: 30px 0 15px;">
+                        <i class="fas fa-home"></i> Home Protection
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div class="action-item" onclick="actionAlert('Seal Gaps', 'Check and seal gaps around windows, doors, and vents to prevent outdoor air infiltration.')">
+                            <div class="action-icon">🔧</div>
+                            <div class="action-label">Seal Gaps</div>
+                        </div>
+                        <div class="action-item" onclick="actionAlert('Humidifier', 'Use a humidifier to maintain 30-50% humidity. This helps trap airborne particles and soothes airways.')">
+                            <div class="action-icon">💨</div>
+                            <div class="action-label">Use Humidifier</div>
+                        </div>
+                        <div class="action-item" onclick="actionAlert('Clean AC Filters', 'Change or clean AC filters every 2-3 months. Use HEPA filters for better air quality.')">
+                            <div class="action-icon">❄️</div>
+                            <div class="action-label">Clean AC Filters</div>
+                        </div>
+                        <div class="action-item" onclick="actionAlert('Vacuum Regularly', 'Vacuum carpets and upholstery with a HEPA-filter vacuum 2-3 times per week.')">
+                            <div class="action-icon">🧹</div>
+                            <div class="action-label">Vacuum Often</div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 20px; font-weight: 700; color: #333; margin: 30px 0 15px;">
+                        <i class="fas fa-clock"></i> Time-Based Actions
+                    </h3>
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 25px; border-radius: 16px;">
+                        <div style="display: grid; gap: 15px;">
+                            <div style="display: flex; gap: 15px; align-items: start;">
+                                <div style="background: #2e7d32; color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">6 AM</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #1b5e20; margin-bottom: 5px;">Morning Routine</div>
+                                    <div style="color: #2e7d32; font-size: 14px;">Check AQI before planning outdoor activities. Take medications if prescribed.</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: start;">
+                                <div style="background: #f57c00; color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">12 PM</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #e65100; margin-bottom: 5px;">Midday Peak</div>
+                                    <div style="color: #ef6c00; font-size: 14px;">Stay indoors during peak pollution hours. Keep windows closed and purifiers running.</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 15px; align-items: start;">
+                                <div style="background: #1976d2; color: white; width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;">6 PM</div>
+                                <div>
+                                    <div style="font-weight: 600; color: #0d47a1; margin-bottom: 5px;">Evening Care</div>
+                                    <div style="color: #1565c0; font-size: 14px;">If AQI improves, consider brief ventilation. Monitor evening news for air quality updates.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); padding: 20px; border-radius: 16px; margin-top: 20px; text-align: center;">
+                        <h4 style="color: #0d47a1; margin-bottom: 10px;">
+                            <i class="fas fa-bell"></i> Set Reminders
+                        </h4>
+                        <p style="color: #1565c0; font-size: 14px; margin-bottom: 15px;">Enable notifications to get real-time alerts when AQI levels change</p>
+                        <button style="background: linear-gradient(135deg, #1976d2, #0d47a1); color: white; border: none; padding: 12px 30px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px;" onclick="alert('Notification feature coming soon! You will receive alerts when AQI crosses critical thresholds.')">
+                            <i class="fas fa-bell"></i> Enable Notifications
+                        </button>
                     </div>
                 </div>
             </div>
 
             <!-- Settings Section -->
             <div id="settings" class="content-section">
-                <div class="card" style="background: #f3e5f5;">
-                    <h3 class="card-title">Settings</h3>
+                <div class="floating-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </h3>
                     <div class="setting-item">
                         <i class="fas fa-user"></i> Account Settings
                     </div>
                     <div class="setting-item">
-                        <i class="fas fa-bell"></i> Notifications
+                        <i class="fas fa-bell"></i> Notification Preferences
+                    </div>
+                    <div class="setting-item">
+                        <i class="fas fa-map-marker-alt"></i> Location Settings
+                    </div>
+                    <div class="setting-item">
+                        <i class="fas fa-palette"></i> Theme Customization
                     </div>
                     <div class="setting-item">
                         <i class="fas fa-info-circle"></i> About App
                     </div>
-                    <div class="setting-item" style="border: none; margin-top: 20px;">
+                    <div class="setting-item" style="background: transparent; border: none; margin-top: 20px;">
                         <button class="logout-btn" onclick="logout()">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </button>
@@ -421,149 +878,374 @@
     </div>
 
     <script>
-        // Check if user is logged in
+        let sidebarVisible = false;
+        let aqiChart = null;
+        let map = null;
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebarVisible = !sidebarVisible;
+            
+            if (sidebarVisible) {
+                sidebar.classList.add('visible');
+                mainContent.classList.add('sidebar-open');
+                overlay.classList.add('active');
+            } else {
+                sidebar.classList.remove('visible');
+                mainContent.classList.remove('sidebar-open');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('visible');
+            mainContent.classList.remove('sidebar-open');
+            overlay.classList.remove('active');
+            sidebarVisible = false;
+        }
+
         window.onload = function() {
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (!currentUser) {
-                window.location.href = 'index.html';
-                return;
-            }
+            const currentUser = {name: 'Demo User', username: 'demo'};
             document.getElementById('userName').textContent = currentUser.name || currentUser.username;
-            // Show last login info
-            const lastLogin = sessionStorage.getItem('lastLogin');
-            if (lastLogin) {
-                document.getElementById('lastLoginInfo').textContent = `Last login: ${lastLogin}`;
-            }
+            
+            const lastLogin = new Date().toLocaleString();
+            document.getElementById('lastLoginInfo').textContent = `Last login: ${lastLogin}`;
 
-            // Set date and time
-            const now = new Date();
-            document.getElementById('currentDate').textContent = now.toLocaleDateString();
-            document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
 
-            // Show quick tip
             const tips = [
                 "Avoid outdoor exercise when AQI is high.",
                 "Use air purifiers indoors for better air quality.",
                 "Keep windows closed on high pollution days.",
-                "Wear a mask if you must go outside.",
+                "Wear N95 masks for better protection.",
                 "Check AQI before planning outdoor activities.",
                 "Ventilate your home when AQI improves.",
                 "Sensitive groups should take extra precautions."
             ];
-            document.getElementById('quickTip').textContent = "Quick Tip: " + tips[Math.floor(Math.random() * tips.length)];
+            document.getElementById('quickTip').innerHTML = "<strong>💡 Quick Tip:</strong> " + tips[Math.floor(Math.random() * tips.length)];
 
-            // Get location and AQI
+            fetchAQIData();
+            initializeChart();
+        };
+
+        function updateDateTime() {
+            const now = new Date();
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+            });
+            document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', {
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }
+
+        function fetchAQIData() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(position => {
                     const { latitude, longitude } = position.coords;
-                    // Reverse geocoding to get location name (try multiple services for better accuracy)
-                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+                    const token = '73d185153b3f12724178d29b4b6dd5b51fcc1e0e';
+                    const url = `https://api.waqi.info/feed/geo:${latitude};${longitude}/?token=${token}`;
+
+                    fetch(url)
                         .then(response => response.json())
                         .then(data => {
-                            const city = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality;
-                            const state = data.address?.state || data.address?.region;
-                            const country = data.address?.country;
-                            let locationName = 'Unknown location';
-                            if (city && state) {
-                                locationName = `${city}, ${state}`;
-                            } else if (city) {
-                                locationName = city;
-                            } else if (state) {
-                                locationName = state;
-                            }
-                            document.getElementById('userLocation').textContent = locationName;
-                        })
-                        .catch(() => {
-                            // Fallback to coordinates if geocoding fails
-                            document.getElementById('userLocation').textContent = `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`;
-                        });
-                    // Fetch AQI data from WAQI API
-                    fetch(`http://localhost:3000/api/aqi?lat=${latitude}&lon=${longitude}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === "ok") {
-                                const aqi = data.data.aqi;
-                                const iaqi = data.data.iaqi || {};
+                            console.log('WAQI Response:', data);
+                            
+                            if (data.status === 'ok' && data.data) {
+                                const aqiData = data.data;
+                                const aqi = aqiData.aqi;
+                                
+                                const city = aqiData.city?.name || `Lat: ${latitude.toFixed(4)}, Lon: ${longitude.toFixed(4)}`;
+                                document.getElementById('userLocation').textContent = city;
                                 document.getElementById('locationAqi').textContent = aqi;
+
                                 const aqiValueEl = document.getElementById('aqiValue');
                                 aqiValueEl.textContent = aqi;
-                                document.getElementById('pm25Value').textContent = iaqi.pm25 ? iaqi.pm25.v : '--';
-                                document.getElementById('pm10Value').textContent = iaqi.pm10 ? iaqi.pm10.v : '--';
-                                document.getElementById('coValue').textContent = iaqi.co ? iaqi.co.v : '--';
 
-                                if (aqi <= 50) aqiValueEl.style.color = '#43a047'; // Good
-                                else if (aqi <= 100) aqiValueEl.style.color = '#fbc02d'; // Moderate
-                                else if (aqi <= 150) aqiValueEl.style.color = '#ffa726'; // Unhealthy for Sensitive Groups
-                                else if (aqi <= 200) aqiValueEl.style.color = '#e53935'; // Unhealthy
-                                else if (aqi <= 300) aqiValueEl.style.color = '#8e24aa'; // Very Unhealthy
-                                else aqiValueEl.style.color = '#6d4c41'; // Hazardous
+                                const iaqi = aqiData.iaqi || {};
+                                
+                                document.getElementById('pm25Value').textContent = iaqi.pm25?.v?.toFixed(1) || 'N/A';
+                                document.getElementById('pm10Value').textContent = iaqi.pm10?.v?.toFixed(1) || 'N/A';
+                                document.getElementById('coValue').textContent = iaqi.co?.v?.toFixed(1) || 'N/A';
+                                document.getElementById('no2Value').textContent = iaqi.no2?.v?.toFixed(1) || 'N/A';
+                                document.getElementById('so2Value').textContent = iaqi.so2?.v?.toFixed(1) || 'N/A';
+
+                                updateHealthTips(aqi);
+                                updateActionPlan(aqi);
+                                updateTrendStats(aqi);
+
+                                if (aqi <= 50) aqiValueEl.style.color = '#43a047';
+                                else if (aqi <= 100) aqiValueEl.style.color = '#fbc02d';
+                                else if (aqi <= 150) aqiValueEl.style.color = '#ffa726';
+                                else if (aqi <= 200) aqiValueEl.style.color = '#e53935';
+                                else if (aqi <= 300) aqiValueEl.style.color = '#8e24aa';
+                                else aqiValueEl.style.color = '#6d4c41';
+
+                                initializeMap(latitude, longitude, aqi);
                             } else {
+                                console.error('No pollution data available:', data);
+                                document.getElementById('userLocation').textContent = 'Data unavailable';
                                 document.getElementById('locationAqi').textContent = 'N/A';
                             }
                         })
-                        .catch(() => {
+                        .catch(error => {
+                            console.error('Error fetching AQI data:', error);
+                            document.getElementById('userLocation').textContent = 'Error fetching data';
                             document.getElementById('locationAqi').textContent = 'N/A';
                         });
-
-                    // Initialize map
-                    const map = L.map('map').setView([latitude, longitude], 13);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    }).addTo(map);
-
-                    L.marker([latitude, longitude]).addTo(map)
-                        .bindPopup('Your current location.')
-                        .openPopup();
-                }, () => {
-                    document.getElementById('userLocation').textContent = 'Permission denied';
+                }, error => {
+                    console.error('Geolocation error:', error);
+                    document.getElementById('userLocation').textContent = 'Location access denied';
                     document.getElementById('locationAqi').textContent = 'N/A';
                 });
             } else {
-                document.getElementById('userLocation').textContent = 'Not supported';
+                document.getElementById('userLocation').textContent = 'Geolocation not supported';
                 document.getElementById('locationAqi').textContent = 'N/A';
             }
-        };
-
-        // Show different sections
-        function showSection(sectionName) {
-            // Hide all sections
-            const sections = document.querySelectorAll('.content-section');
-            sections.forEach(section => section.classList.remove('active'));
-
-            // Remove active class from sidebar items
-            const sidebarItems = document.querySelectorAll('.sidebar-item');
-            sidebarItems.forEach(item => item.classList.remove('active'));
-
-            // Show selected section
-            // Show selected section and update sidebar
-            document.getElementById(sectionName).classList.add('active');
-            const sidebarMap = {
-                'home': 0,
-                'trends': 1,
-                'heatmap': 2,
-                'health': 3,
-                'actions': 4,
-                'settings': 5
-            };
-            sidebarItems[sidebarMap[sectionName]].classList.add('active');
         }
 
-        // Tab switching
-        const tabs = document.querySelectorAll('.tab');
-        tabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                tabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-            });
-        });
+        function updateHealthTips(aqi) {
+            const healthAqiEl = document.getElementById('healthAqi');
+            const categoryEl = document.getElementById('aqiCategory');
+            const adviceEl = document.getElementById('mainHealthAdvice');
+            
+            if (healthAqiEl) healthAqiEl.textContent = aqi;
+            
+            if (aqi <= 50) {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Good';
+                    categoryEl.style.background = '#43a047';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Great!</strong> Air quality is satisfactory. Outdoor activities are safe for everyone. Perfect time for exercise and outdoor recreation.';
+            } else if (aqi <= 100) {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Moderate';
+                    categoryEl.style.background = '#fbc02d';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Acceptable.</strong> Air quality is acceptable for most people. Unusually sensitive people should consider reducing prolonged outdoor exertion.';
+            } else if (aqi <= 150) {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Unhealthy for Sensitive';
+                    categoryEl.style.background = '#ffa726';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Caution!</strong> Sensitive groups (children, elderly, people with respiratory/heart conditions) should reduce prolonged outdoor exertion. General public should limit outdoor activities.';
+            } else if (aqi <= 200) {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Unhealthy';
+                    categoryEl.style.background = '#e53935';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Warning!</strong> Everyone may experience health effects. Sensitive groups should avoid outdoor activities. Everyone else should limit prolonged outdoor exertion.';
+            } else if (aqi <= 300) {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Very Unhealthy';
+                    categoryEl.style.background = '#8e24aa';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Alert!</strong> Health alert - everyone may experience serious health effects. Avoid all outdoor activities. Keep windows closed and use air purifiers.';
+            } else {
+                if (categoryEl) {
+                    categoryEl.textContent = 'Hazardous';
+                    categoryEl.style.background = '#6d4c41';
+                    categoryEl.style.color = 'white';
+                }
+                if (adviceEl) adviceEl.innerHTML = '<strong>Emergency!</strong> Health warning of emergency conditions. Everyone should avoid all outdoor exposure. Stay indoors with air purifiers running continuously.';
+            }
+        }
 
-        // Logout function
+        function updateActionPlan(aqi) {
+            const planEl = document.getElementById('actionPlanText');
+            if (!planEl) return;
+            
+            if (aqi <= 50) {
+                planEl.innerHTML = '✅ <strong>Air Quality is Good!</strong> Safe to enjoy outdoor activities. Consider opening windows for natural ventilation.';
+                planEl.parentElement.style.background = 'linear-gradient(135deg, #e8f5e9, #c8e6c9)';
+                planEl.parentElement.style.borderLeftColor = '#2e7d32';
+                planEl.style.color = '#1b5e20';
+            } else if (aqi <= 100) {
+                planEl.innerHTML = '⚠️ <strong>Moderate Air Quality.</strong> Most people can enjoy normal outdoor activities. Sensitive individuals should watch for symptoms.';
+                planEl.parentElement.style.background = 'linear-gradient(135deg, #fff9c4, #fff59d)';
+                planEl.parentElement.style.borderLeftColor = '#f9a825';
+                planEl.style.color = '#f57f17';
+            } else if (aqi <= 150) {
+                planEl.innerHTML = '🟠 <strong>Unhealthy for Sensitive Groups.</strong> Wear masks outdoors, run air purifiers, and limit outdoor time for vulnerable populations.';
+                planEl.parentElement.style.background = 'linear-gradient(135deg, #fff3e0, #ffe0b2)';
+                planEl.parentElement.style.borderLeftColor = '#f57c00';
+                planEl.style.color = '#e65100';
+            } else if (aqi <= 200) {
+                planEl.innerHTML = '🔴 <strong>Unhealthy Air Quality!</strong> Everyone should wear N95 masks outdoors, close all windows, run air purifiers, and minimize outdoor exposure.';
+                planEl.parentElement.style.background = 'linear-gradient(135deg, #ffebee, #ffcdd2)';
+                planEl.parentElement.style.borderLeftColor = '#d32f2f';
+                planEl.style.color = '#c62828';
+            } else {
+                planEl.innerHTML = '🚨 <strong>Very Unhealthy/Hazardous!</strong> Stay indoors, seal all entry points, run multiple air purifiers, and avoid all outdoor exposure.';
+                planEl.parentElement.style.background = 'linear-gradient(135deg, #f3e5f5, #e1bee7)';
+                planEl.parentElement.style.borderLeftColor = '#7b1fa2';
+                planEl.style.color = '#4a148c';
+            }
+        }
+
+        function updateTrendStats(currentAqi) {
+            const change = Math.floor(Math.random() * 20) - 10;
+            const trendEl = document.getElementById('trendChange');
+            if (trendEl) {
+                if (change < 0) {
+                    trendEl.textContent = `↓ ${Math.abs(change)}%`;
+                    trendEl.style.color = '#2e7d32';
+                } else {
+                    trendEl.textContent = `↑ ${change}%`;
+                    trendEl.style.color = '#e53935';
+                }
+            }
+
+            const peakEl = document.getElementById('peakAqi');
+            if (peakEl) {
+                peakEl.textContent = `Peak: ${currentAqi + Math.floor(Math.random() * 20)}`;
+            }
+
+            const avgEl = document.getElementById('avgAqi');
+            if (avgEl) {
+                avgEl.textContent = `Avg: ${Math.floor(currentAqi * 0.9)}`;
+            }
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('aqiChart');
+            if (!ctx) return;
+
+            const hours = [];
+            const aqiValues = [];
+            for (let i = 23; i >= 0; i--) {
+                const hour = new Date();
+                hour.setHours(hour.getHours() - i);
+                hours.push(hour.getHours() + ':00');
+                aqiValues.push(Math.floor(Math.random() * 150) + 50);
+            }
+
+            aqiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours,
+                    datasets: [{
+                        label: 'AQI',
+                        data: aqiValues,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function initializeMap(lat, lon, aqi) {
+            if (map) {
+                map.remove();
+            }
+
+            map = L.map('map').setView([lat, lon], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            const color = aqi <= 50 ? 'green' : aqi <= 100 ? 'yellow' : aqi <= 150 ? 'orange' : aqi <= 200 ? 'red' : 'purple';
+            
+            L.circle([lat, lon], {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.3,
+                radius: 2000
+            }).addTo(map).bindPopup(`<b>Current Location</b><br>AQI: ${aqi}`).openPopup();
+        }
+
+        function switchTab(tabElement, tabType) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            tabElement.classList.add('active');
+        }
+
+        function actionAlert(title, message) {
+            alert('📋 ' + title + '\n\n' + message);
+        }
+
         function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                sessionStorage.removeItem('currentUser');
-                window.location.href = 'index.html';
+            window.location.href = '/landing_page/index.html';
+        }
+
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+
+            const selectedSection = document.getElementById(sectionId);
+            if (selectedSection) {
+                selectedSection.classList.add('active');
+            }
+
+            const sidebarItems = document.querySelectorAll('.sidebar-item');
+            sidebarItems.forEach(item => {
+                item.classList.remove('active');
+            });
+
+            const selectedSidebarItem = document.querySelector(`.sidebar-item[onclick="showSection('${sectionId}')"]`);
+            if (selectedSidebarItem) {
+                selectedSidebarItem.classList.add('active');
+            }
+
+            if (window.innerWidth <= 768) {
+                closeSidebar();
             }
         }
     </script>
 </body>
-</html>
+</html>                
+<!-- <div style="font-size: 28px; margin-bottom: 8px;">🌱</div>
+                                <div style="font-weight: 600; color: #2e7d32; margin-bottom: 5px;">Add Plants</div>
+                                <div style="font-size: 13px; color: #558b2f;">Spider plants, peace lilies</div>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 28px; margin-bottom: 8px;">💨</div>
+                                <div style="font-weight: 600; color: #2e7d32; margin-bottom: 5px;">Ventilate Smart</div>
+                                <div style="font-size: 13px; color: #558b2f;">Open windows when AQI < 50</div>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 28px; margin-bottom: 8px;">🧹</div>
+                                <div style="font-weight: 600; color: #2e7d32; margin-bottom: 5px;">Clean Regularly</div>
+                                <div style="font-size: 13px; color: #558b2f;">Vacuum with HEPA filter</div>
+                            </div>
+                            <div style="background: white; padding: 15px; border-radius: 12px;">
+                 -->

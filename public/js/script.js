@@ -102,7 +102,7 @@ signupButton.addEventListener('click', async function() {
     }
 
     try {
-        const response = await fetch(`${API_URL}/signup`, {
+        const response = await fetch(`${API_URL}/api/auth/signup`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ loginButton.addEventListener('click', async function() {
     }
 
     try {
-        const response = await fetch(`${API_URL}/login`, {
+        const response = await fetch(`${API_URL}/api/auth/login`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ forgotPasswordLink.addEventListener('click', async function(event) {
     }
 
     try {
-        const response = await fetch(`${API_URL}/forgot-password`, {
+        const response = await fetch(`${API_URL}/api/auth/forgot-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
