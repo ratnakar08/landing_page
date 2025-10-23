@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>AIRTH - Air Quality Visualizer</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <img class = "image-gradient" src="gradient.png" alt="gradient">
-    <div class ="layer-blur"></div>
-
-    <div class = "container">
-        <header>
-            <h1 class = "logo">AIRTH</h1>
+    <div class="weather-background"></div>
+    
+    <header>
+        <div class="header-container">
+            <a href="#" class="logo">AIRTH</a>
             
             <nav>
                 <a href="#">Home</a>
@@ -21,139 +21,134 @@
                 <a href="#footer">Contact</a>
             </nav>
             
-            <a href="/landing_page/public/index.html" class="btn-signing">Signin/Login</a>
-        </header>
-    <main>
-        <div class = "content">
-            <div class = "tag-box">
-                <div class = "tag"> INTRODUCING &wedbar;</div>
-            </div>
-
-            <h1> AIR QUALITY <br>VISUALIZER</h1>
-
-            <p class = "description">
-                The clear choice for clear air.
-            </p>
-
-            <div class = "button">
-                <!-- <a href="#" class="btn-get-started">DOCUMENTATION ></a> -->
-                <a href="/landing_page/public/index.html" class="btn-signing-main">GETSTARTED ></a>
+            <div class="auth-buttons">
+                <a href="public/index.html" class="btn btn-secondary">Sign In</a>
+                <a href="public/index.html" class="btn btn-primary">Sign Up</a>
             </div>
         </div>
-    </main>
+    </header>
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <span class="hero-tag">✨ Introducing AIRTH</span>
+                <h1>Monitor Air Quality in Real-Time</h1>
+                <p>Make informed decisions about your environment with our advanced air quality visualization platform. Get real-time updates, detailed analytics, and personalized recommendations.</p>
+                <div class="button-group">
+                    <a href="public/index.html" class="btn btn-primary">Get Started</a>
+                    <a href="#features" class="btn btn-secondary">Learn More</a>
+                </div>
+            </div>
+            <!-- Weather themed SVG -->
+            <div class="weather-icons">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" style="width: 100%; height: auto;">
+                    <defs>
+                        <linearGradient id="cloud-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#5c6bc0;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <path fill="url(#cloud-gradient)" d="M65.5,87.5c0-6.9,5.6-12.5,12.5-12.5c1.2,0,2.4,0.2,3.5,0.5c2.4-4.8,7.4-8.1,13.1-8.1c8.1,0,14.7,6.6,14.7,14.7c0,0.3,0,0.7,0,1c4.6,1.8,7.9,6.3,7.9,11.5c0,6.9-5.6,12.5-12.5,12.5H78c-6.9,0-12.5-5.6-12.5-12.5Z"/>
+                </svg>
+            </div>
+        </div>
+    </section>
     <section id="features">
-        <div class="features-container">
-            <h2>Features</h2>
-            <div class="features-list">
-                <div class="feature-item">
-                    <h4>Real-Time Monitoring</h4>
-                    <p>Get live updates on air quality levels from various locations.</p>
-                </div>
-                <div class="feature-item">
-                    <h4>Data Visualization</h4>
-                    <p>Interactive charts and maps to visualize pollution data effectively.</p>
-                </div>
-                <div class="feature-item">
-                    <h4>Customized Health Recommendations</h4>
-                    <p>Based on the AQI value health recommendations will be given.</p>
-                </div>
-                <div class="feature-item">
-                    <h4>Historical Analysis</h4>
-                    <p>Analyze past trends to predict future air quality patterns.</p>
-                </div>
-                <div class="feature-item">
-                    <h4>User Dashboard</h4>
-                    <p>Personalized dashboard for tracking and managing your data.</p>
+        <div class="container">
+            <div class="section-title">
+                <h2>Why Choose AIRTH?</h2>
+                <p>Discover the powerful features that make air quality monitoring easier than ever</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3V21M3 12H21" stroke="#4a90e2" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>Real-Time Monitoring</h3>
+                    <p>Get instant updates on air quality levels from multiple locations, helping you stay informed about your environment.</p>
                 </div>
                 
+                <div class="feature-card">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 18L7 14L11 16L21 6" stroke="#4a90e2" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <h3>Data Visualization</h3>
+                    <p>Interactive charts and maps that make complex air quality data easy to understand and analyze.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3L20 7V17L12 21L4 17V7L12 3Z" stroke="#4a90e2" stroke-width="2"/>
+                    </svg>
+                    <h3>Health Insights</h3>
+                    <p>Receive personalized health recommendations based on current air quality levels in your area.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <svg class="feature-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9L12 3L21 9V21H3V9Z" stroke="#4a90e2" stroke-width="2"/>
+                    </svg>
+                    <h3>Historical Analysis</h3>
+                    <p>Track and analyze past air quality trends to make informed decisions about your future activities.</p>
+                </div>
             </div>
         </div>
     </section>
 
     <section id="about">
-        <div class="about-container">
-            <h2>Our Application Usage</h2>
-            <p>Our Air Quality Visualizer helps users monitor and understand air pollution levels in real-time. With intuitive visualizations and data-driven insights, you can make informed decisions to improve air quality in your area.</p>
-
-            <h3>Meet Our Team</h3>
-            <div class="team-slider">
-                <div class="team-member">
-                    <span class="label">Team Leader</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 1">
-                    <h4>Kota Ratnakar</h4>
-                    <p>Lead Developer</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 2">
-                    <h4>K Charan Reddy</h4>
-                    <p>UI/UX Designer</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 3">
-                    <h4>A Goutham Reddy</h4>
-                    <p>Data Analyst</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 4">
-                    <h4>S Shiva sai goud</h4>
-                    <p>Project Manager</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 5">
-                    <h4>A Bhavitha</h4>
-                    <p>Backend Engineer</p>
-                </div>
-                <!-- Duplicate for seamless loop -->
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 1">
-                    <h4>Kota Ratnakar</h4>
-                    <p>Lead Developer</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 2">
-                    <h4>K Charan Reddy</h4>
-                    <p>UI/UX Designer</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 3">
-                    <h4>A Goutham Reddy</h4>
-                    <p>Data Analyst</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 4">
-                    <h4>S Shiva sai goud</h4>
-                    <p>Project Manager</p>
-                </div>
-                <div class="team-member">
-                    <span class="label">Team Member</span>
-                    <img src="https://via.placeholder.com/150" alt="Team Member 5">
-                    <h4>A Bhavitha</h4>
-                    <p>Backend Engineer</p>
+        <div class="container">
+            <div class="section-title">
+                <h2>About AIRTH</h2>
+                <p>Our mission is to make air quality monitoring accessible and actionable for everyone. With intuitive visualizations and data-driven insights, we help you make informed decisions about your environment.</p>
+            </div>
+            
+            <div class="team-section">
+                <h3>Meet Our Team</h3>
+                <div class="team-grid">
+                    <div class="team-member">
+                        <h4>Kota Ratnakar</h4>
+                        <p>Lead Developer</p>
+                    </div>
+                    <div class="team-member">
+                        <h4>Charan Reddy</h4>
+                        <p>UI/UX Designer</p>
+                    </div>
+                    <div class="team-member">
+                        <h4>A Goutham Reddy</h4>
+                        <p>Data Analyst</p>
+                    </div>
+                    <div class="team-member">
+                        <h4>S Shiva sai goud</h4>
+                        <p>Project Manager</p>
+                    </div>
+                    <div class="team-member">
+                        <h4>A Bhavitha</h4>
+                        <p>Backend Engineer</p>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <footer id="footer">
-        <div class="footer-container">
-            <h3>Contact Us</h3>
-            <p>Email: contact@airth.com</p>
-            <p>Phone: +1 (123) 456-7890</p>
-            <p>&copy; 2023 AIRTH. All rights reserved.</p>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>Contact Us</h3>
+                    <p>We're here to help with any questions about our air quality monitoring services.</p>
+                    <p>Email: contact@airth.com</p>
+                    <p>Phone: +1 (123) 456-7890</p>
+                </div>
+                <div class="footer-links">
+                    <h3>Quick Links</h3>
+                    <a href="#features">Features</a>
+                    <a href="#about">About Us</a>
+                    <a href="public/index.html">Sign In</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2023 AIRTH. All rights reserved.</p>
+            </div>
         </div>
     </footer>
-
-    </div>
-
-    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.10.82/build/spline-viewer.js"></script>
-<spline-viewer url="https://prod.spline.design/1mcyapM9t0mOWwKi/scene.splinecode"></spline-viewer>
 </body>
 </html>
